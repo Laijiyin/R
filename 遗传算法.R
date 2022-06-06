@@ -1,0 +1,111 @@
+#染色体编码函数
+Coding<-function(L,x){
+  bs<-c()
+  for(i in 1:4){
+    a<-as.integer(intToBits(Pt[i]))[1:L]
+    bs[i]<-paste(rev(a),collapse="")
+  }
+  bs
+}
+#群体初始化函数
+Initialize<-function(n,a,b){
+  a<-as.integer(runif(n,a,b))
+}
+#适应值评价函数
+Evaluate<-function(x){
+  F=x^2
+}
+#保存最优染色体
+Keep_best<-function(x){
+  which.max(x)
+}
+#选择算子函数
+Selection<-function(n,x){
+  C<-c()
+  p<-Evaluate(x)/sum(Evaluate(x))
+  for(i in 1:n){
+    r<-runif(1,0,1)
+    m<-0
+    for(k in 1:n){
+      m<-m+p[k]
+      if(r<=m){
+        C[i]=x[k]
+        break
+      }
+    }
+  }
+  C
+}
+#交叉算子函数
+Crossover<-function(L,n,x){
+  C<-c()
+  pos<-c()
+  Pc<-0.5
+  for(k in 1:n){
+    r<-runif(1,0,1)
+    if(r<=Pc){
+      pos<-c(pos,k)
+    }else {C<-c(C,x[k])}
+  }
+  while(length(pos)>1){
+    i<-sample(1:length(pos),1)  
+    j<-sample(1:length(pos),1)
+    if(i!=j){
+      a<-c(x[pos[i]],x[pos[j]])
+      a<-Coding(L,a)
+      p<-sample(1:L-1,1)
+      a1<-substr(a,1,p)
+      a2<-substr(a,p+1,L)
+      b<-paste(c(a1[1],a2[2]),collapse="")
+      c<-paste(c(a1[2],a2[1]),collapse="")
+      C<-c(C,c(strtoi(b,2),strtoi(c,2)))
+      pos<-pos[-c(i,j)]
+    }
+  }
+  if(length(pos)==1){
+    C<-c(C,x[pos[1]])
+  }
+  C
+}
+#变异算子函数
+Mutation<-function(L,n,x){
+  Pm<-0.05
+  for(k in 1:n){
+    r<-runif(1,0,1)
+    if(r<=Pm){
+      a<-Coding(L,x[k])
+      a<-strsplit(a,"")
+      p<-sample(1:L,1)
+      a[[1]][p]=1-as.numeric(a[[1]][p])
+      a<-as.character(as.numeric(a[[1]]))
+      a<-paste(a,collapse="")
+      x[k]<-strtoi(a,2)
+    }
+  }
+  x
+}
+
+
+t<-0
+Max<-c()
+L<-ceiling(log2(32))
+#群体初始化
+Pt<- Initialize(4,0,31)
+#适应度评价
+E<-Evaluate(Pt)
+#保存最优解
+Best<-Pt[Keep_best(E)]
+Max<-c(Max,Pt[Keep_best(E)])
+#循环100次
+while(t<100){
+  Pt<-Selection(4,Pt)
+  Pt<-Crossover(L,4,Pt)
+  Pt<-Mutation(L,4,Pt)
+  E<-Evaluate(Pt)
+  t<-t+1
+  if(Best<=Pt[Keep_best(E)]){Best=Pt[Keep_best(E)]
+  Max<-c(Max,Pt[Keep_best(E)])}else{Max<-c(Max,max(Max))}
+}
+#画图
+plot(c(1:length(Max)),Max^2,xlab="次数",ylab="F=x^2",pch="*")
+lines(c(1:length(Max)),Max^2)
